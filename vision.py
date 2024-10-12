@@ -1,6 +1,7 @@
 import sys
 import socket
 import threading
+import time
 
 from vision_detection_pb2 import Vision_DetectionFrame
 
@@ -96,9 +97,11 @@ class Robot(object):
 
 if __name__ == '__main__':
 	vision_module = Vision()
-	my_robot = vision_module.my_robot
-	print('My robot:', my_robot.x, my_robot.y)
-	blue_robot_0 = vision_module.blue_robot[0]
-	print('Blue robot 0:', blue_robot_0.x, blue_robot_0.y)
-	yellow_robot_0 = vision_module.yellow_robot[0]
-	print('Yellow robot 0:', yellow_robot_0.x, yellow_robot_0.y)
+	while True:
+		my_robot = vision_module.my_robot
+		print('My robot:', my_robot.x, my_robot.y)
+		blue_robot_0 = vision_module.blue_robot[0]
+		print('Blue robot 0:', blue_robot_0.x, blue_robot_0.y)
+		yellow_robot_0 = vision_module.yellow_robot[0]
+		print('Yellow robot 0:', yellow_robot_0.x, yellow_robot_0.y)
+		time.sleep(1)
