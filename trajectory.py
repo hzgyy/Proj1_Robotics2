@@ -13,7 +13,9 @@ class Trajectory:
 	beta = 0.3
 	lamda = 2
 	tao = 5
-	Kp = 0.8
+	Kp = 1.5
+	v = 0
+	w = 0
 	def __init__(self,vision,action):
 		self.vision = vision
 		self.my_robot = vision.my_robot
@@ -58,38 +60,36 @@ class Trajectory:
 		i = 1
 		des_x = path_x[i]
 		des_y = path_y[i]
-		des_o = math.atan2(des_y-path_y[i-1],des_x-path_x[i-1])
-		# goto transition function
-		next_x = path_x[i+1]
-		next_y = path_y[i+1]
-		next_o = math.atan2(next_y-path_y[i],next_x-path_x[i])
+		des_o = math.atan2(des_y-path_y[i-1],des_x-path_x[i-1])		
 		if self.__Reach(des_x,des_y,self.ReachRange) == False:
 			#change to the polar coordinate
 			r,delta,theta = self.__TurnPolar(des_x,des_y,des_o)
 			v,w = self.__PlanSpeed(r,delta,theta)
 			self.action.sendCommand(vx = v,vy = 0, vw = w)
+			self.v = v
+			self.w = w
 			#print("r:%.2f,delta:%.2f,theta:%.2f\n v:%.2f,w:%.2f,odes%.2f\n realv:%.2f,orientation:%.2f\n"\
 			#		%(r,delta,theta,v,w,des_o,self.my_robot.raw_vel_x,self.my_robot.raw_orientation),flush = True)
 			#time.sleep(0.05)
 		#counter for trans
 		else:
+			if len(path_x) == 2:
+				self.__Stop(des_x,des_y,des_o)
+				return 0
 			tc = 0
+			next_x = path_x[i+1]
+			next_y = path_y[i+1]
+			next_o = math.atan2(next_y-path_y[i],next_x-path_x[i])
 			while tc < self.tao:
 				tc = tc+1
 				r1,delta1,theta1 = self.__TurnPolar(des_x,des_y,des_o)
 				r2,delta2,theta2 = self.__TurnPolar(next_x,next_y,next_o)
 				tv,tw = self.__PlanTrans(tc,[r1,r2],[delta1,delta2],[theta1,theta2])
 				self.action.sendCommand(vx = tv,vw = tw)
-				#time.sleep(0.01)
+				time.sleep(0.01)
 			del path_x[0]
 			del path_y[0]
-
-	def __CheckColiision(self,path_x,path_y):
-		candidates = []
-		for r in self.vision.robots_yellow:
-			if __Reach(r.raw_x,r.raw_y,1000):
-				
-				candidates.append(r)
+		return 1
 
 
 	def __Stop(self,des_x,des_y,des_o):
@@ -112,8 +112,8 @@ class Trajectory:
 			kai = 1/r*(self.K2*(delta-math.atan(-self.K1*theta))+(1+self.K1/(1+(self.K1*theta)**2))*math.sin(delta))
 		else:
 			kai = 1/r*(self.K2*(delta-math.atan(-self.K1*theta))-(1+self.K1/(1+(self.K1*theta)**2))*math.sin(delta))
-		print('\r'+str(kai)+'\n',end = '',flush = True)
-		print("\n")
+		#print('\r'+str(kai)+'\n',end = '',flush = True)
+		#print("\n")
 		v = self.Vmax/(1+self.beta*abs(kai)**self.lamda)
 		w = v*kai
 		return v,w
@@ -144,4 +144,5 @@ class Trajectory:
 		v2,w2 = self.__PlanSpeed(rs[1],deltas[1],thetas[1])
 		return (1-scaler)*v1+scaler*v2,(1-scaler)*w1+scaler*w2
 
-
+	def SetVmax(self,vmax):
+		self.Vmax =vmax

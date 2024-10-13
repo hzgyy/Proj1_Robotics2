@@ -28,7 +28,7 @@ class ElasticBand:
 	obs = []
 	bubbles = []
 	N = 0
-	Kc = 10
+	Kc = 15
 	Kr = 0.5
 	rho0 = 750
 	fmin = 10
@@ -45,8 +45,6 @@ class ElasticBand:
 		for (x,y) in zip(bubble_x,bubble_y):
 			self.bubbles.append(bubble(x,y,0))
 		self.N = len(bubble_x)
-		#print(bubble_x,bubble_y)
-		#print("------\n")
 
 	def MoveBubble(self,path_x,path_y):
 		self.__UpdateBubble(path_x,path_y)
@@ -76,16 +74,13 @@ class ElasticBand:
 					self.bubbles[i].y += self.bubbles[i].rho/1000*fy
 			# go into the check process
 			self.__UpdateRho()
-			if count % 5 == 0:
+			# TODO check 
+			if count % 3 == 0:
 				if self.__DeleteandCreate() == False:
 					return [],[]
 			count += 1
-		print(count)
-		package = Debug_Msgs()
-		self.debugger.draw_points(package, [obj.x for obj in self.bubbles], [obj.y for obj in self.bubbles])
-		for r in self.bubbles:
-			self.debugger.draw_circle(package,r.x,r.y,r.rho)
-		self.debugger.send(package)
+		#print(count)
+		self.__DrawBubbles()
 		return [r.x for r in self.bubbles],[r.y for r in self.bubbles]
 
 	def __DeleteandCreate(self):
@@ -107,8 +102,9 @@ class ElasticBand:
 			bb = self.bubbles[i+1]
 			tempd = math.sqrt((b.x-bb.x)**2+(b.y-bb.y)**2)
 			# check the collapse of the band
-			if b.rho+bb.rho <= tempd+400:
+			if b.rho+bb.rho <= tempd+150:
 				if b.new_label == 1 or bb.new_label == 1:
+					self.__DrawBubbles()
 					return False
 				else:
 					newone = bubble((b.x+bb.x)/2,(b.y+bb.y)/2,1)
@@ -130,6 +126,8 @@ class ElasticBand:
 		dy1 = self.bubbles[ori_idx+1].y-self.bubbles[ori_idx].y
 		l0 = math.sqrt(dx0**2+dy0**2)
 		l1 = math.sqrt(dx1**2+dy1**2)
+		if l0 == 0 or l1 == 0:
+			print(self.bubbles[ori_idx-1].x,self.bubbles[ori_idx].x,self.bubbles[ori_idx+1].x)
 		fx = self.Kc*(dx0/l0+dx1/l1)
 		fy = self.Kc*(dy0/l0+dy1/l1)
 		return fx,fy
@@ -160,18 +158,6 @@ class ElasticBand:
 				min_index = i
 		return math.sqrt(min_dist)
 
-
-	# def __UpdateObs(self):
-	# 	self.obs_x =[]
-	# 	self.obs_y =[]
-	# 	self.rho = []
-	# 	for r in self.vision.yellow_robot:
-	# 		self.obs_x.append(r.raw_x)
-	# 		self.obs_y.append(r.raw_y)
-	# 	for i in range(self.N):
-	# 		t1 = self.__FindNearestObs(self.bubble_x[i],self.bubble_y[i])
-	# 		self.rho.append(t1)
-
 	def __UpdateRho(self):
 		for i in range(self.N):
 			self.bubbles[i].rho = self.__FindNearestObs(self.bubbles[i].x,self.bubbles[i].y)
@@ -183,3 +169,10 @@ class ElasticBand:
 			if b.stop_label == 0:
 				return True
 		return False
+
+	def __DrawBubbles(self):
+		package = Debug_Msgs()
+		self.debugger.draw_points(package, [obj.x for obj in self.bubbles], [obj.y for obj in self.bubbles])
+		for r in self.bubbles:
+			self.debugger.draw_circle(package,r.x,r.y,r.rho)
+		self.debugger.send(package)

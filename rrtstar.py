@@ -73,7 +73,7 @@ class RRTStar:
 
     def planning(self, goal_x, goal_y, start_x, start_y, vision):
         self.nodeList.clear()
-        
+        last_node=None
         start_node = Node(start_x, start_y, 0.0, None)
         self.nodeList.append(start_node)
 
@@ -130,3 +130,7 @@ class RRTStar:
                 draw_y2.append(node.y)
 
         return path_x[::-1], path_y[::-1], draw_x1[::-1], draw_y1[::-1], draw_x2[::-1], draw_y2[::-1]
+
+    def SetStep(self,step,n):
+        self.Stepsize = step
+        self.N_SAMPLE = n
